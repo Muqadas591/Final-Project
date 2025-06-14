@@ -21,6 +21,7 @@ import { Feather, MaterialIcons, FontAwesome } from "@expo/vector-icons"
 import { LinearGradient } from "expo-linear-gradient"
 import * as ImagePicker from "expo-image-picker"
 import { useRouter } from "expo-router"
+import { auth, db } from "../firebase/init"
 
 // Get device dimensions
 const { width, height } = Dimensions.get("window")
@@ -47,6 +48,23 @@ const SettingScreen = () => {
     return () => subscription?.remove()
   }, [])
 
+  // Fetch user data on mount
+  useEffect(() => {
+    const user = auth.currentUser
+    if (user) {
+      const userRef = db.collection("users").doc(user.uid)
+      userRef.get().then((doc) => {
+        if (doc.exists) {
+          const data = doc.data()
+          setUserName(data.name || "Jamie Doe")
+        }
+      }).catch((error) => {
+        console.error("Error fetching user data:", error)
+        Alert.alert("Error", "Failed to load user data")
+      })
+    }
+  }, [])
+
   const languages = ["English", "Spanish", "French", "German", "Chinese"]
 
   const handleContactSupport = () => {
@@ -67,15 +85,42 @@ const SettingScreen = () => {
     setShowEditNameModal(true)
   }
 
-  const saveUserName = () => {
-    if (newUserName.trim()) {
-      setUserName(newUserName)
+  const saveUserName = async () => {
+    if (!newUserName.trim()) {
+      Alert.alert("Error", "Username cannot be empty")
+      return
     }
-    setShowEditNameModal(false)
+
+    const user = auth.currentUser
+    if (!user) {
+      Alert.alert("Error", "You must be logged in to update your username")
+      setShowEditNameModal(false)
+      return
+    }
+
+    try {
+      await db.collection("users").doc(user.uid).set(
+        { name: newUserName.trim() },
+        { merge: true }
+      )
+      setUserName(newUserName)
+      Alert.alert("Success", "Username updated successfully")
+    } catch (error) {
+      console.error("Error updating username:", error)
+      Alert.alert("Error", "Failed to update username")
+    } finally {
+      setShowEditNameModal(false)
+    }
   }
 
   const pickImage = async () => {
     try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
+      if (status !== "granted") {
+        Alert.alert("Permission Denied", "Sorry, we need camera roll permissions to make this work!")
+        return
+      }
+
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
@@ -85,9 +130,11 @@ const SettingScreen = () => {
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         setProfileImage(result.assets[0].uri)
+        Alert.alert("Success", "Profile picture updated locally")
       }
     } catch (error) {
-      console.log("Error picking image:", error)
+      console.error("Error picking image:", error)
+      Alert.alert("Error", "Failed to update profile picture")
     }
   }
 
@@ -102,13 +149,18 @@ const SettingScreen = () => {
         },
         {
           text: "Log Out",
-          onPress: () => {
-            // Perform logout actions
-            router.replace("/LogInScreen")
+          onPress: async () => {
+            try {
+              await auth.signOut()
+              router.replace("/LogInScreen")
+            } catch (error) {
+              console.error("Error logging out:", error)
+              Alert.alert("Error", "Failed to log out")
+            }
           },
         },
       ],
-      { cancelable: true },
+      { cancelable: true }
     )
   }
 
@@ -116,14 +168,30 @@ const SettingScreen = () => {
     setShowDeleteAccountModal(true)
   }
 
-  const confirmDeleteAccount = () => {
-    if (deleteConfirmText.toLowerCase() === "delete") {
-      // Perform account deletion actions
+  const confirmDeleteAccount = async () => {
+    if (deleteConfirmText.toLowerCase() !== "delete") {
+      Alert.alert("Error", "Please type 'delete' to confirm account deletion.")
+      return
+    }
+
+    const user = auth.currentUser
+    if (!user) {
+      Alert.alert("Error", "You must be logged in to delete your account")
+      setShowDeleteAccountModal(false)
+      return
+    }
+
+    try {
+      // Delete user data from Firestore
+      await db.collection("users").doc(user.uid).delete()
+      // Delete user account
+      await user.delete()
       setShowDeleteAccountModal(false)
       Alert.alert("Account Deleted", "Your account has been successfully deleted.")
       router.replace("/LogInScreen")
-    } else {
-      Alert.alert("Error", "Please type 'delete' to confirm account deletion.")
+    } catch (error) {
+      console.error("Error deleting account:", error)
+      Alert.alert("Error", "Failed to delete account. Please try again.")
     }
   }
 
@@ -217,7 +285,7 @@ const SettingScreen = () => {
           <View style={[styles.section, { width: sectionWidth }]}>
             <Text style={styles.sectionTitle}>Account</Text>
 
-            <TouchableOpacity style={styles.settingItem}>
+            <TouchableOpacity style={styles.settingItem} onPress={() => router.push("/ChangePasswordScreen")}>
               <View style={styles.settingInfo}>
                 <MaterialIcons name="security" size={24} color="#F4A896" />
                 <Text style={styles.settingLabel}>Change Password</Text>
@@ -382,6 +450,7 @@ const SettingScreen = () => {
     </SafeAreaView>
   )
 }
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -591,6 +660,5 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
 })
-
 
 export default SettingScreen

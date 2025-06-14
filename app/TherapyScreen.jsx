@@ -17,14 +17,13 @@ import {
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { GestureHandlerRootView, PinchGestureHandler, State } from 'react-native-gesture-handler';
-import { Video, Audio } from 'expo-av';
-import { db } from '../firebase/init';
-import { auth } from '../firebase/init';
-import axios from 'axios';
+import firebase from 'firebase/compat/app';
+import 'firebase/compat/firestore';
+import { auth, db } from '../firebase/init';
 import { Feather } from '@expo/vector-icons';
+import YouTube from 'react-youtube';
 import YoutubePlayer from 'react-native-youtube-iframe';
 import * as Sensors from 'expo-sensors';
-import { API_URL } from 'react-native-dotenv';
 
 // Validate Firestore
 if (!db || !auth) {

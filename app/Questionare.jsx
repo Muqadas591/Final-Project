@@ -162,7 +162,7 @@ export default function QuestionnaireScreen() {
 
       try {
         router.push({
-          pathname: "/Recommendationscreen",
+          pathname: "/RecomendationScreen",
           params: {
             responses: JSON.stringify(orderedResponses),
             sessionId: `session_${Date.now()}`,

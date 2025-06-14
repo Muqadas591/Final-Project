@@ -20,11 +20,12 @@ const ReusableStyles = StyleSheet.create({
   },
   
   splashImage: {
-    width: 120,
-    height: 120,
-    marginBottom: 20,
-    borderRadius: 60,
+    width:"100%",
+    height:"100%",
+    borderRadius:1000,
+    
   },
+
   splashText: {
     marginTop: 20,
     fontSize: 30,
@@ -35,7 +36,7 @@ const ReusableStyles = StyleSheet.create({
   splashTagline: {
     marginTop: 10,
     fontSize: 18,
-    color: "#ECEFF4", // Warm peach
+    color: "0E2148", // Warm peach
     fontFamily: "Poppins-Medium",
     textAlign: "center",
   },
