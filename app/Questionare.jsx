@@ -19,6 +19,18 @@ import { auth } from "../firebase/init";
 
 const { width, height } = Dimensions.get("window");
 
+// Helper function to determine slider track color based on value
+const getSliderTrackColor = (value) => {
+  if (value >= 1 && value <= 3) {
+    return "#4CAF50"; // Green
+  } else if (value >= 4 && value <= 6) {
+    return "#FFEB3B"; // Yellow
+  } else if (value >= 7 && value <= 10) {
+    return "#F44336"; // Red
+  }
+  return "#757575"; // Default color if outside ranges
+};
+
 export default function QuestionnaireScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState({});
@@ -30,17 +42,18 @@ export default function QuestionnaireScreen() {
   const router = useRouter();
 
   const [dimensions, setDimensions] = useState({ width, height });
+
   const categoricalMappings = {
-  High: 3,
-  Medium: 2,
-  Low: 1,
-  No: 0,
-  Poor: 1,
-  Good: 3,
-  Yes: 1,
-  True: 1,
-  False: 0
-};
+    High: 3,
+    Medium: 2,
+    Low: 1,
+    No: 0,
+    Poor: 1,
+    Good: 3,
+    Yes: 1,
+    True: 1,
+    False: 0,
+  };
 
   useEffect(() => {
     const subscription = Dimensions.addEventListener("change", ({ window }) => {
@@ -79,15 +92,32 @@ export default function QuestionnaireScreen() {
   const initializeAnswers = (qs) => {
     const initialAnswers = {};
     qs.forEach((q, i) => {
-      if (q.type === "scale") {
+      if (q.type === "scale" || q.type === "numeric") {
         initialAnswers[i] = 5;
-      } else if (q.type === "options") {
+      } else if (q.type === "options" || q.type === "binary") {
         initialAnswers[i] = q.options?.[0]?.value || "";
       } else {
         initialAnswers[i] = "";
       }
     });
     setAnswers(initialAnswers);
+  };
+
+  // Normalize responses to match backend expectations
+  const normalizeResponse = (value, questionType) => {
+    if (typeof value !== "string") return value;
+
+    const lowerValue = value.toLowerCase();
+    if (questionType === "binary") {
+      if (lowerValue === "yes" || lowerValue === "true") return "Yes";
+      if (lowerValue === "no" || lowerValue === "false") return "No";
+    } else if (questionType === "categorical") {
+      const normalized = Object.keys(categoricalMappings).find(
+        (key) => key.toLowerCase() === lowerValue
+      );
+      return normalized || value; // Fallback to original if not found
+    }
+    return value;
   };
 
   const handleNext = async () => {
@@ -107,76 +137,41 @@ export default function QuestionnaireScreen() {
         setSliderValue(answers[currentIndex + 1] || 5);
       });
     } else {
-     // Function to convert questionnaire answers to numeric array
-const convertResponsesToNumeric = (answers, questions) => {
-  const responses = Object.keys(answers)
-    .sort((a, b) => a - b) // Sort keys to maintain question order
-    .map((key) => {
-      const value = answers[key];
-      const question = questions[key];
-
-      let numericValue;
-
-      if (!question) {
-        console.warn(`No question found for key: ${key}`);
-        return 0; // Default to 0 if question is missing (aligns with Python's dropna)
-      }
-
-      if (question.type === "options") {
-        // Check if the value is directly mappable (e.g., "High", "Medium")
-        if (value in categoricalMappings) {
-          numericValue = categoricalMappings[value];
-        } else {
-          // If value is an option, find its numeric equivalent
-          const option = question.options.find((opt) => opt.value === value);
-          numericValue =
-            option && option.numericValue !== undefined
-              ? option.numericValue
-              : categoricalMappings[value] || parseInt(value, 10);
-        }
-      } else if (question.type === "scale") {
-        // For scale questions, assume value is already numeric (e.g., 1-10)
-        numericValue = parseInt(value, 10);
-      } else {
-        // Fallback for other question types
-        numericValue =
-          value in categoricalMappings
-            ? categoricalMappings[value]
-            : parseInt(value, 10);
-      }
-
-      // Validate numeric value
-      if (isNaN(numericValue)) {
-        console.warn(`Invalid numeric value for key ${key}: ${value}`);
-        return 0; // Default to 0 for unmapped or invalid values
-      }
-
-      return numericValue;
-    });
-
-  // Validate that all responses are numbers
-  if (responses.some((val) => typeof val !== "number" || isNaN(val))) {
-    throw new Error("All answers must be valid numbers.");
-  }
-
-  return responses;
-};
-
-      const responses = convertResponsesToNumeric(answers, questions);
-
-      if (responses.length !== 15) {
-        setError(`Please answer all 15 questions. Got ${responses.length} responses.`);
+      // Ensure all questions have been answered
+      const answeredQuestions = Object.keys(answers);
+      if (answeredQuestions.length !== questions.length) {
+        setError(`Please answer all ${questions.length} questions.`);
         return;
       }
 
-      console.log("Submitting responses:", responses);
-      router.push({
-        pathname: "/RecomendationScreen",
-        params: {
-          responses: JSON.stringify(responses),
-          sessionId: `session_${Date.now()}`,
-        },
+      // Convert answers to ordered responses with normalization
+      const orderedResponses = questions.map((question, index) => {
+        const response = answers[index];
+        return normalizeResponse(response, question.type);
       });
+
+      // Validate responses
+      if (orderedResponses.some((response) => response === undefined || response === null || response === "")) {
+        setError("Please answer all questions before submitting.");
+        return;
+      }
+
+      console.log("Questions:", JSON.stringify(questions, null, 2));
+      console.log("Answers before normalization:", JSON.stringify(answers, null, 2));
+      console.log("Ordered responses after normalization:", JSON.stringify(orderedResponses, null, 2));
+
+      try {
+        router.push({
+          pathname: "/Recommendationscreen",
+          params: {
+            responses: JSON.stringify(orderedResponses),
+            sessionId: `session_${Date.now()}`,
+          },
+        });
+      } catch (err) {
+        console.error("Error navigating to Recommendationscreen:", err);
+        setError("Failed to navigate to recommendations. Please try again.");
+      }
     }
   };
 
@@ -207,7 +202,7 @@ const convertResponsesToNumeric = (answers, questions) => {
   }
 
   if (error) {
-          return (
+    return (
       <SafeAreaView style={{ flex: 1 }}>
         <LinearGradient colors={["#D8E8E4", "#E1D6F2"]} style={styles.gradientBackground}>
           <View style={styles.container}>
@@ -254,7 +249,7 @@ const convertResponsesToNumeric = (answers, questions) => {
                   );
                 }
 
-                if (currentQuestion.type === "options" && !currentQuestion.options) {
+                if ((currentQuestion.type === "options" || currentQuestion.type === "binary") && !currentQuestion.options) {
                   console.error("Options missing for question:", currentQuestion);
                   return (
                     <View style={styles.errorContainer}>
@@ -266,6 +261,7 @@ const convertResponsesToNumeric = (answers, questions) => {
 
                 switch (currentQuestion.type.toLowerCase()) {
                   case "scale":
+                  case "numeric":
                     return (
                       <View style={styles.sliderContainer}>
                         <Slider
@@ -275,14 +271,15 @@ const convertResponsesToNumeric = (answers, questions) => {
                           step={1}
                           value={sliderValue}
                           onValueChange={setSliderValue}
-                          minimumTrackTintColor="#77E4C8"
-                          maximumTrackTintColor="#F93827"
+                          minimumTrackTintColor={getSliderTrackColor(sliderValue)}
+                          maximumTrackTintColor={getSliderTrackColor(sliderValue)}
                           thumbTintColor="#4c00ff"
                         />
                         <Text style={styles.sliderValueText}>Value: {Math.round(sliderValue)}</Text>
                       </View>
                     );
                   case "options":
+                  case "binary":
                     let optionsToRender = [];
                     try {
                       if (Array.isArray(currentQuestion.options) && currentQuestion.options.length > 0) {

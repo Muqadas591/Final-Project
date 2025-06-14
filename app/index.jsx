@@ -53,7 +53,7 @@ function App() {
             <View style={[styles.imageContainer, { width: logoSize, height: logoSize }]}>
               <Image 
                 source={require("../assets/images/logo.png")} 
-                style={[styles.splashImage, ReusableStyles.splashImage]} 
+                style={[ ReusableStyles.splashImage]} 
                 resizeMode="cover" 
               />
             </View>
@@ -80,12 +80,12 @@ function App() {
             <View style={[styles.imageContainer, { width: logoSize, height: logoSize }]}>
               <Image 
                 source={require("../assets/images/logo.png")} 
-                style={[styles.welcomeImage, ReusableStyles.splashImage]} 
+                style={[ ReusableStyles.splashImage]} 
                 resizeMode="cover" 
               />
             </View>
             <Text style={[styles.welcomeTitle, ReusableStyles.splashText]}>Welcome to Calmia</Text>
-            <Text style={[styles.welcomeTagline, ReusableStyles.tagline]}>Find Your Inner Calm</Text>
+            <Text style={[styles.welcomeTagline]}>Find Your Inner Calm</Text>
 
             <View style={styles.buttonContainer}>
               <Button 
@@ -139,19 +139,23 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "#659287",
     marginBottom: 20,
+    position: "absolute",
+    top:10,
+    width:100,
+    height:100,
+
   },
-  splashImage: {
-    width: "100%",
-    height: "100%",
-  },
-  welcomeImage: {
-    width: "100%",
-    height: "100%",
-  },
+  
+  //welcomeImage: {
+    //width: "200%",
+    //height: "200%",
+    //borderRadius:100,
+    //resizeMode:"cover"
+  //},
   splashTitle: {
     fontSize: 42,
     fontWeight: "bold",
-    color: "#4F6367",
+    color: "#0E2148",
     marginBottom: 10,
     textAlign: "center",
   },
@@ -164,14 +168,14 @@ const styles = StyleSheet.create({
   },
   splashTagline: {
     fontSize: 18,
-    color: "#4F6367",
+    color: "#0E2148",
     marginBottom: 20,
     textAlign: "center",
     fontStyle: "italic",
   },
   welcomeTagline: {
     fontSize: 18,
-    color: "#4F6367",
+    color: "#0E2148",
     marginBottom: 40,
     textAlign: "center",
     fontStyle: "italic",

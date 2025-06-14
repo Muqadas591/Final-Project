@@ -15,13 +15,12 @@ import {
 import { useRouter } from 'expo-router';
 import { MaterialIcons, Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { auth, db } from '../firebase/firebaseConfig';
-import { collection, query, where, orderBy, limit, getDocs, addDoc } from 'firebase/firestore';
+import { auth, db } from '../firebase/init';
 
 // Get device dimensions
 const { width, height } = Dimensions.get('window');
 
-// Navbar Component
+// Navbar Component (unchanged)
 const Navbar = () => {
   const router = useRouter();
   const navItems = [
@@ -53,10 +52,11 @@ const Navbar = () => {
   );
 };
 
-// User Greeting Component
+// User Greeting Component (updated)
 const UserGreeting = () => {
   const [greeting, setGreeting] = useState('Good day');
   const [userName, setUserName] = useState('User');
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const hour = new Date().getHours();
@@ -64,14 +64,38 @@ const UserGreeting = () => {
     else if (hour < 18) setGreeting('Good afternoon');
     else setGreeting('Good evening');
 
-    // Get username from Firebase Authentication
-    const user = auth.currentUser;
-    if (user && user.displayName) {
-      setUserName(user.displayName);
-    }
+    const fetchUserData = async () => {
+      try {
+        const user = auth.currentUser;
+        if (user) {
+          const userRef = db.collection('users').doc(user.uid);
+          const userSnap = await userRef.get();
+          
+          if (userSnap.exists) {
+            const userData = userSnap.data();
+            setUserName(userData.name || 'User');
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+        Alert.alert('Error', 'Failed to load user data');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUserData();
   }, []);
 
   const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+
+  if (isLoading) {
+    return (
+      <View style={styles.header}>
+        <Text style={styles.loadingText}>Loading...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.header}>
@@ -88,43 +112,94 @@ const UserGreeting = () => {
   );
 };
 
-// Section Title Component
+// Section Title Component (unchanged)
 const SectionTitle = ({ title }) => <Text style={styles.sectionTitle}>{title}</Text>;
 
-// Progress Slider Component
+// Progress Slider Component (updated)
 const ProgressSlider = () => {
   const [sessions, setSessions] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch the user's last 3 sessions from Firestore
     const fetchSessions = async () => {
       const user = auth.currentUser;
-      if (user) {
-        try {
-          const q = query(
-            collection(db, 'sessions'),
-            where('userId', '==', user.uid),
-            orderBy('timestamp', 'desc'),
-            limit(3)
-          );
-          const snapshot = await getDocs(q);
-          const sessionList = snapshot.docs.map((doc) => ({
+      if (!user) {
+        console.log('No user logged in');
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        console.log('Fetching sessions for user:', user.uid);
+        
+        // Get all sessions for the user without ordering
+        const q = db.collection('sessions')
+          .where('userId', '==', user.uid)
+          .limit(3);
+        
+        const snapshot = await q.get();
+        console.log('User sessions snapshot:', snapshot.size, 'documents found');
+        
+        if (snapshot.empty) {
+          console.log('No sessions found for user');
+          setSessions([]);
+          setIsLoading(false);
+          return;
+        }
+
+        const sessionList = snapshot.docs.map((doc) => {
+          const data = doc.data();
+          console.log('Processing session data:', {
             id: doc.id,
-            environment: doc.data().environment || 'Unknown',
-            recommendation: doc.data().recommendation || 'None',
-            lastVisited: doc.data().timestamp.toDate().toLocaleDateString('en-US', {
+            data: data
+          });
+          
+          // Get the timestamp from either timestamp or exitedAt field
+          const timestamp = data.timestamp || data.exitedAt;
+          
+          return {
+            id: doc.id,
+            environment: data.environmentId || 'Unknown',
+            recommendation: data.recommendation || 'None',
+            lastVisited: timestamp ? new Date(timestamp.toDate()).toLocaleDateString('en-US', {
               month: 'long',
               day: '2-digit',
               year: 'numeric',
-            }),
-            sessionsTaken: 1, // Assuming 1 session per document; adjust if counting differently
-          }));
-          setSessions(sessionList);
-        } catch (error) {
-          Alert.alert('Error', 'Failed to load sessions.');
-        }
+            }) : 'Unknown',
+            sessionsTaken: data.sessionsTaken || 1,
+            emotion: data.emotion || 'Unknown',
+            feedback: data.feedback || 'No feedback',
+            mentalHealthIssue: data.mentalHealthIssue || 'Unknown',
+            sentiment: data.sentiment || 'Unknown',
+            status: data.status || 'Unknown',
+            therapy: data.therapy || 'Unknown',
+            userId: data.userId || user.uid,
+            timestamp: timestamp ? new Date(timestamp.toDate()).toLocaleString('en-US') : 'Unknown',
+          };
+        });
+
+        // Sort sessions by timestamp in memory
+        sessionList.sort((a, b) => {
+          const dateA = a.timestamp ? new Date(a.timestamp) : new Date(0);
+          const dateB = b.timestamp ? new Date(b.timestamp) : new Date(0);
+          return dateB - dateA;
+        });
+
+        console.log('Processed sessions:', sessionList);
+        setSessions(sessionList);
+      } catch (error) {
+        console.error('Error fetching sessions:', error);
+        console.error('Error details:', {
+          message: error.message,
+          code: error.code,
+          stack: error.stack
+        });
+        Alert.alert('Error', 'Failed to load sessions. Please try again.');
+      } finally {
+        setIsLoading(false);
       }
     };
+
     fetchSessions();
   }, []);
 
@@ -133,20 +208,38 @@ const ProgressSlider = () => {
       <Text style={styles.sliderTitle}>Session Summary</Text>
       <View style={styles.sliderContent}>
         <Text style={styles.sliderText}>
-          Sessions Taken: <Text style={styles.sliderValue}>{item.sessionsTaken}</Text>
+          Date: <Text style={styles.sliderValue}>{item.lastVisited}</Text>
         </Text>
         <Text style={styles.sliderText}>
-          Last Environment: <Text style={styles.sliderValue}>{item.environment}</Text>
+          Therapy: <Text style={styles.sliderValue}>{item.therapy}</Text>
         </Text>
         <Text style={styles.sliderText}>
-          Recommendation: <Text style={styles.sliderValue}>{item.recommendation}</Text>
+          Environment: <Text style={styles.sliderValue}>{item.environment}</Text>
         </Text>
         <Text style={styles.sliderText}>
-          Last Visited: <Text style={styles.sliderValue}>{item.lastVisited}</Text>
+          Status: <Text style={styles.sliderValue}>{item.status}</Text>
         </Text>
+        {item.mentalHealthIssue && (
+          <Text style={styles.sliderText}>
+            Issue: <Text style={styles.sliderValue}>{item.mentalHealthIssue}</Text>
+          </Text>
+        )}
+        {item.feedback && (
+          <Text style={styles.sliderText}>
+            Feedback: <Text style={styles.sliderValue}>{item.feedback}</Text>
+          </Text>
+        )}
       </View>
     </View>
   );
+
+  if (isLoading) {
+    return (
+      <View style={styles.card}>
+        <Text style={styles.loadingText}>Loading sessions...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.card}>
@@ -172,37 +265,40 @@ const ProgressSlider = () => {
   );
 };
 
-// Journal Component
+// Journal Component (unchanged)
 const Journal = () => {
   const [journalEntry, setJournalEntry] = useState('');
   const [feedbackEntries, setFeedbackEntries] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
-    // Fetch the latest feedback entry for "Recent Entries"
     const fetchFeedback = async () => {
       const user = auth.currentUser;
       if (user) {
         try {
-          const q = query(
-            collection(db, 'feedback'),
-            where('userId', '==', user.uid),
-            orderBy('timestamp', 'desc'),
-            limit(1)
-          );
-          const snapshot = await getDocs(q);
+          const q = db.collection('feedback')
+            .where('userId', '==', user.uid)
+            .orderBy('timestamp', 'desc')
+            .limit(1);
+          const snapshot = await q.get();
           const feedbackList = snapshot.docs.map((doc) => ({
             id: doc.id,
-            content: doc.data().content,
-            date: doc.data().timestamp.toDate().toLocaleString('en-US', {
+            content: doc.data().feedback || '',
+            date: doc.data().timestamp?.toDate().toLocaleString('en-US', {
               month: 'short',
               day: '2-digit',
               hour: '2-digit',
               minute: '2-digit',
-            }),
+            }) || 'Unknown',
           }));
           setFeedbackEntries(feedbackList);
         } catch (error) {
-          Alert.alert('Error', 'Failed to load feedback.');
+          console.error('Error fetching feedback:', error);
+          Alert.alert('Error', 'Failed to load feedback');
+        } finally {
+          setIsLoading(false);
         }
       }
     };
@@ -214,28 +310,47 @@ const Journal = () => {
       Alert.alert('Error', 'Please write something before saving.');
       return;
     }
+
     const user = auth.currentUser;
-    if (user) {
-      try {
-        await addDoc(collection(db, 'journal'), {
-          userId: user.uid,
-          content: journalEntry,
-          timestamp: new Date(),
-        });
-        setJournalEntry(''); // Clear the input field
-        Alert.alert('Success', 'Journal entry saved!');
-      } catch (error) {
-        Alert.alert('Error', 'Failed to save journal entry.');
-      }
+    if (!user) {
+      Alert.alert('Error', 'You must be logged in to save journal entries.');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      await db.collection('journal').add({
+        userId: user.uid,
+        content: journalEntry.trim(),
+        timestamp: db.FieldValue.serverTimestamp(),
+      });
+      setJournalEntry('');
+      Alert.alert('Success', 'Journal entry saved!');
+    } catch (error) {
+      console.error('Error saving journal entry:', error);
+      Alert.alert('Error', 'Failed to save journal entry. Please try again.');
+    } finally {
+      setIsSaving(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <View style={styles.card}>
+        <Text style={styles.loadingText}>Loading journal...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.card}>
       <View style={styles.journalHeader}>
         <Feather name="edit-3" size={20} color="#4F6367" />
         <Text style={styles.journalTitle}>Your Journal</Text>
-        <TouchableOpacity style={styles.viewAllButton}>
+        <TouchableOpacity 
+          style={styles.viewAllButton}
+          onPress={() => router.push('./JournalHistoryScreen')}
+        >
           <Text style={styles.viewAllText}>View All</Text>
         </TouchableOpacity>
       </View>
@@ -249,11 +364,13 @@ const Journal = () => {
         onChangeText={setJournalEntry}
       />
       <TouchableOpacity
-        style={[styles.saveButton, !journalEntry.trim() && styles.disabledButton]}
-        disabled={!journalEntry.trim()}
+        style={[styles.saveButton, (!journalEntry.trim() || isSaving) && styles.disabledButton]}
+        disabled={!journalEntry.trim() || isSaving}
         onPress={saveJournalEntry}
       >
-        <Text style={styles.saveButtonText}>Save Entry</Text>
+        <Text style={styles.saveButtonText}>
+          {isSaving ? 'Saving...' : 'Save Entry'}
+        </Text>
       </TouchableOpacity>
       {feedbackEntries.length > 0 && (
         <View style={styles.savedEntriesContainer}>
@@ -283,19 +400,28 @@ export default function Home() {
       setDimensions({ width: window.width, height: window.height });
     });
 
-    // Wait for next tick to ensure layout is mounted
-    setTimeout(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
       setIsReady(true);
-    }, 0);
+      if (!user) {
+        router.replace('/LogInScreen');
+      }
+    });
 
-    return () => subscription?.remove();
+    return () => {
+      subscription?.remove();
+      unsubscribe();
+    };
   }, []);
 
-  useEffect(() => {
-    if (isReady && !auth.currentUser) {
-      router.replace('/login');
-    }
-  }, [isReady, router]);
+  if (!isReady) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <Text style={styles.loadingText}>Loading...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -315,7 +441,7 @@ export default function Home() {
   );
 }
 
-// Styles
+// Styles (simplified avatar style)
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
@@ -506,7 +632,7 @@ const styles = StyleSheet.create({
   navbarContainer: {
     flexDirection: "row",
     backgroundColor: "#4F6367",
-    width: 220, // Reduced width for 3 items
+    width: 220,
     height: 60,
     alignItems: "center",
     justifyContent: "space-around",
@@ -534,4 +660,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-})
+  loadingText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    padding: 20,
+  },
+  noDataText: {
+    fontSize: 14,
+    color: '#757575',
+    textAlign: 'center',
+    padding: 20,
+  },
+});

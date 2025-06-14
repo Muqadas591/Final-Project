@@ -82,7 +82,7 @@ export default function WelcomeScreen() {
       {/* Video Background */}
       <View style={styles.backgroundContainer}>
         <Video
-          source={require("../assets/images/large.mp4")}
+          source={require("../assets/images/sun sky.mp4")}
           shouldPlay
           isLooping
           isMuted

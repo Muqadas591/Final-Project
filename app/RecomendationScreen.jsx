@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  Image,
   TouchableOpacity,
   ScrollView,
   Alert,
@@ -11,25 +10,20 @@ import {
   Dimensions,
   SafeAreaView,
   Easing,
-  Platform, // Added Platform import
+  Platform,
+  PanResponder,
 } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Feather, FontAwesome5 } from '@expo/vector-icons';
-import { PanGestureHandler, State } from 'react-native-gesture-handler';
 import axios from 'axios';
 import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { auth } from '../firebase/init';
-import { collection, addDoc, doc, getDoc, query, where, getDocs } from '@firebase/firestore';
-import { db } from '../firebase/firebaseConfig';
-import { getFirestore } from '@firebase/firestore';
 
 // Cache keys
 const CACHE_KEYS = {
-  RESPONSES: (userId, sessionId) => `responses_${userId}_${sessionId}`,
   THERAPY_SUGGESTION: (userId, sessionId) => `therapy_suggestion_${userId}_${sessionId}`,
-  ENVIRONMENT: (envId) => `environment_${envId}`,
 };
 
 // Cache expiration time (24 hours in milliseconds)
@@ -66,21 +60,64 @@ const getCachedData = async (key) => {
   }
 };
 
-// Dynamically set API_URL with a fallback
-const API_URL = Constants.manifest?.extra?.API_URL || 
-               Constants.expoConfig?.extra?.API_URL || 
-               "http://localhost:5000"; // Update this to your actual backend URL
+// Dynamically set API_URL with a fallback and handle device/emulator environment
+const API_URL = (() => {
+  const url = Constants.manifest?.extra?.API_URL || 
+              Constants.expoConfig?.extra?.API_URL;
+  if (url) return url;
+  if (Platform.OS === 'web') return 'http://localhost:5000';
+  if (Platform.OS === 'android') return 'http://10.0.2.2:5000';
+  if (Platform.OS === 'ios') return 'http://localhost:5000';
+  return 'http://localhost:5000';
+})();
 
 const { width, height } = Dimensions.get('window');
 
+// Normalize responses to match backend expectations
+const normalizeResponse = (response, index, expectedTypes) => {
+  const expectedType = expectedTypes[index];
+  if (typeof response !== 'string') return response;
+
+  const lowerResponse = response.toLowerCase();
+  if (expectedType === 'binary') {
+    if (lowerResponse === 'yes' || lowerResponse === 'true') return 'Yes';
+    if (lowerResponse === 'no' || lowerResponse === 'false') return 'No';
+  } else if (expectedType === 'categorical') {
+    const categoricalMappings = {
+      High: 3,
+      Medium: 2,
+      Low: 1,
+      Poor: 1,
+      Good: 3,
+    };
+    const normalized = Object.keys(categoricalMappings).find(
+      (key) => key.toLowerCase() === lowerResponse
+    );
+    return normalized || response;
+  }
+  return response;
+};
+
 const RecommendationScreen = () => {
   const { responses, sessionId } = useLocalSearchParams();
-  let parsedResponses = [];
-  try {
-    parsedResponses = responses ? JSON.parse(responses) : [];
-  } catch (e) {
-    console.error('Failed to parse responses:', e);
-  }
+
+  const expectedTypes = [
+    'categorical', 'categorical', 'categorical', 'categorical', 'binary',
+    'binary', 'binary', 'binary', 'binary', 'binary',
+    'binary', 'numeric', 'numeric', 'binary', 'binary'
+  ];
+
+  const parsedResponses = useMemo(() => {
+    try {
+      if (!responses) return [];
+      const parsed = JSON.parse(responses);
+      // Normalize responses
+      return parsed.map((response, index) => normalizeResponse(response, index, expectedTypes));
+    } catch (e) {
+      console.error('Failed to parse responses:', e);
+      return [];
+    }
+  }, [responses]);
 
   const [recommendation, setRecommendation] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -91,13 +128,25 @@ const RecommendationScreen = () => {
   const slideAnim = useRef(new Animated.Value(50)).current;
   const rotateValue = useRef(new Animated.Value(0)).current;
   const [rotateAngle, setRotateAngle] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onPanResponderGrant: () => {},
+      onPanResponderMove: (evt, gestureState) => {
+        const newAngle = rotateAngle + gestureState.dx / 2;
+        setRotateAngle(newAngle);
+        rotateValue.setValue(newAngle);
+      },
+      onPanResponderRelease: () => {},
+    })
+  ).current;
 
   useEffect(() => {
     console.log('API_URL:', API_URL);
-    // Check if API_URL is valid for the platform
-    if (!API_URL || (API_URL.includes('localhost') && Platform.OS !== 'web')) {
-      console.error('API_URL may be invalid for this environment. Ensure it points to a reachable backend.');
+    console.log('Parsed responses:', parsedResponses);
+    if (!API_URL) {
+      console.error('API_URL is not configured.');
       setError('Backend URL is not configured correctly. Please contact support.');
       setIsLoading(false);
       return;
@@ -112,7 +161,6 @@ const RecommendationScreen = () => {
 
     const checkNetworkAndFetch = async () => {
       try {
-        // Check network connectivity
         const netInfo = await NetInfo.fetch();
         if (!netInfo.isConnected) {
           throw new Error('No internet connection. Please check your network.');
@@ -135,11 +183,10 @@ const RecommendationScreen = () => {
     }
   }, [parsedResponses, sessionId]);
 
-  const saveResponsesAndGetRecommendation = async (retryCount = 0, maxRetries = 3) => {
+  const saveResponsesAndGetRecommendation = useCallback(async (retryCount = 0, maxRetries = 3) => {
     try {
       console.log('Starting recommendation process', { responses: parsedResponses, sessionId });
 
-      // Wait for authentication
       if (!auth.currentUser) {
         console.log('No authenticated user, waiting for auth...');
         await new Promise((resolve) => {
@@ -161,214 +208,65 @@ const RecommendationScreen = () => {
         throw new Error(`Invalid number of responses: expected 15, got ${parsedResponses.length}`);
       }
 
-      // Get Firestore instance
-      const db = await getFirestore();
-
-      // Check cache for responses
-      const responsesCacheKey = CACHE_KEYS.RESPONSES(userId, sessionId);
-      const cachedResponses = await getCachedData(responsesCacheKey);
-
-      if (!cachedResponses) {
-        // Check if responses exist in Firestore
-        setLoadingMessage('Checking existing responses...');
-        const responsesRef = collection(db, 'Responses');
-        const responsesQuery = query(
-          responsesRef,
-          where('userId', '==', userId),
-          where('sessionId', '==', sessionId)
-        );
-        const existingResponses = await getDocs(responsesQuery);
-
-        if (!existingResponses.empty) {
-          console.log('Responses already exist in Firestore, caching them');
-          const responseData = existingResponses.docs[0].data();
-          await cacheData(responsesCacheKey, responseData);
-        } else {
-          setLoadingMessage('Saving responses...');
-          console.log('Saving responses to Firestore');
-          const firestoreStart = Date.now();
-
-          const responseData = {
-            userId,
-            sessionId,
-            responses: parsedResponses,
-            timestamp: new Date().toISOString(),
-          };
-
-          await addDoc(responsesRef, responseData);
-          await cacheData(responsesCacheKey, responseData);
-          console.log(`Firestore save took ${Date.now() - firestoreStart}ms`);
-        }
-      }
-
-      // Check cache for therapy suggestion
-      const suggestionCacheKey = CACHE_KEYS.THERAPY_SUGGESTION(userId, sessionId);
-      const cachedSuggestion = await getCachedData(suggestionCacheKey);
-
-      if (cachedSuggestion) {
-        console.log('Using cached therapy suggestion');
-        setRecommendation(cachedSuggestion);
+      // Check cache for recommendation
+      const cacheKey = CACHE_KEYS.THERAPY_SUGGESTION(userId, sessionId);
+      const cachedRecommendation = await getCachedData(cacheKey);
+      if (cachedRecommendation) {
+        console.log('Using cached recommendation:', cachedRecommendation);
+        setRecommendation(cachedRecommendation);
         setIsLoading(false);
         return;
       }
 
-      // Check if therapy suggestion exists in Firestore
-      const suggestionsRef = collection(db, 'therapySuggestions');
-      const suggestionsQuery = query(
-        suggestionsRef,
-        where('userId', '==', userId),
-        where('sessionId', '==', sessionId)
-      );
-      const existingSuggestions = await getDocs(suggestionsQuery);
-
-      if (!existingSuggestions.empty) {
-        console.log('Therapy suggestion exists in Firestore, caching it');
-        const existingSuggestion = existingSuggestions.docs[0].data();
-        const recommendationData = {
-          mentalHealthIssue: existingSuggestion.condition,
-          therapy: existingSuggestion.suggestion,
-          therapyDescription: existingSuggestion.therapyDescription,
-          environmentId: existingSuggestion.environmentId,
-          environment: existingSuggestion.environment
-        };
-        await cacheData(suggestionCacheKey, recommendationData);
-        setRecommendation(recommendationData);
-        setIsLoading(false);
-        return;
-      }
-
-      setLoadingMessage('Predicting condition...');
-      console.log('Calling /predict_pre_therapy');
-      const predictStart = Date.now();
-      
-      // Configure axios with longer timeout and retry logic
-      const axiosConfig = {
-        timeout: 30000,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        validateStatus: function (status) {
-          return status >= 200 && status < 500;
-        }
-      };
-
-      const conditionResponse = await axios.post(
-        `${API_URL}/predict_pre_therapy`, 
-        { responses: parsedResponses }, 
-        axiosConfig
-      );
-
-      if (conditionResponse.status !== 200) {
-        throw new Error(`Prediction failed: ${conditionResponse.data.error || 'Unknown error'}`);
-      }
-
-      console.log(`Predict pre-therapy took ${Date.now() - predictStart}ms`, conditionResponse.data);
-      const mentalHealthIssue = conditionResponse.data.condition;
-
-      setLoadingMessage('Fetching recommendation...');
-      console.log('Calling /recommend_therapy');
-      const recommendStart = Date.now();
-      
-      const therapyResponse = await axios.post(
-        `${API_URL}/recommend_therapy`, 
-        { condition: mentalHealthIssue }, 
-        axiosConfig
-      );
-
-      if (therapyResponse.status !== 200) {
-        throw new Error(`Therapy recommendation failed: ${therapyResponse.data.error || 'Unknown error'}`);
-      }
-
-      console.log(`Recommend therapy took ${Date.now() - recommendStart}ms`, therapyResponse.data);
-
-      // Validate therapy response
-      if (!therapyResponse.data.therapy || !therapyResponse.data.environmentId) {
-        throw new Error('Invalid therapy response: Missing therapy or environmentId');
-      }
-
-      // Fetch environment data from Firestore
-      setLoadingMessage('Fetching environment details...');
-      const environmentId = therapyResponse.data.environmentId;
-      console.log('Fetching environment from Firestore:', environmentId);
-      const envDocRef = doc(db, 'environments', environmentId);
-      const envDoc = await getDoc(envDocRef);
-
-      if (!envDoc.exists()) {
-        throw new Error(`Environment with ID ${environmentId} not found in Firestore`);
-      }
-
-      const environmentData = envDoc.data();
-
-      // Validate required environment fields
-      const requiredFields = ['title', 'description', 'benefits', 'imageUrl'];
-      const missingFields = requiredFields.filter(field => !environmentData[field]);
-      if (missingFields.length > 0) {
-        throw new Error(`Environment data missing required fields: ${missingFields.join(', ')}`);
-      }
-
-      // Save therapy suggestion with environment data
-      setLoadingMessage('Saving therapy suggestion...');
-      await addDoc(suggestionsRef, {
-        userId,
-        sessionId,
-        condition: mentalHealthIssue,
-        suggestion: therapyResponse.data.therapy,
-        therapyDescription: therapyResponse.data.therapyDescription || 'A personalized therapy to support your mental well-being.',
-        environmentId,
-        environment: {
-          title: environmentData.title,
-          description: environmentData.description,
-          benefits: Array.isArray(environmentData.benefits) ? environmentData.benefits : ['Unknown benefits'],
-          imageUrl: environmentData.imageUrl,
-          duration: environmentData.duration || '20min',
-          videoUrl: environmentData.videoUrl || '',
-          guidanceAudioUrl: environmentData.guidanceAudioUrl || '',
-          ambientAudioUrl: environmentData.ambientAudioUrl || '',
-        },
-        recommendedAt: new Date().toISOString(),
+      // Step 1: Call /predict_pre_therapy with responses to get condition
+      console.log('Sending to /predict_pre_therapy:', parsedResponses);
+      const preTherapyResponse = await axios.post(`${API_URL}/predict_pre_therapy`, {
+        responses: parsedResponses,
+      }, {
+        headers: { 'Content-Type': 'application/json' },
       });
 
-      // After getting new recommendation, cache it
-      const recommendationData = {
-        mentalHealthIssue,
-        therapy: therapyResponse.data.therapy,
-        therapyDescription: therapyResponse.data.therapyDescription || 'A personalized therapy to support your mental well-being.',
-        environmentId,
-        environment: {
-          title: environmentData.title,
-          description: environmentData.description,
-          benefits: Array.isArray(environmentData.benefits) ? environmentData.benefits : ['Unknown benefits'],
-          imageUrl: environmentData.imageUrl,
-          duration: environmentData.duration || '20min',
-          videoUrl: environmentData.videoUrl || '',
-          guidanceAudioUrl: environmentData.guidanceAudioUrl || '',
-          ambientAudioUrl: environmentData.ambientAudioUrl || '',
-        },
-      };
-
-      // Cache the environment data
-      const environmentCacheKey = CACHE_KEYS.ENVIRONMENT(environmentId);
-      await cacheData(environmentCacheKey, environmentData);
-
-      // Cache the recommendation
-      await cacheData(suggestionCacheKey, recommendationData);
-
-      setRecommendation(recommendationData);
-      setIsLoading(false);
-    } catch (error) {
-      console.error('Error in saveResponsesAndGetRecommendation:', error);
-      
-      if (retryCount < maxRetries) {
-        console.log(`Retrying... Attempt ${retryCount + 1} of ${maxRetries}`);
-        await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, retryCount)));
-        return saveResponsesAndGetRecommendation(retryCount + 1, maxRetries);
+      if (preTherapyResponse.status !== 200 || !preTherapyResponse.data.condition) {
+        throw new Error('Failed to fetch condition from pre-therapy prediction');
       }
-      
-      setError(error.message);
+
+      const condition = preTherapyResponse.data.condition;
+      console.log('Predicted condition:', condition);
+
+      // Step 2: Call /recommend_therapy with condition to get therapy recommendation
+      const therapyResponse = await axios.post(`${API_URL}/recommend_therapy`, {
+        condition,
+      }, {
+        headers: { 'Content-Type': 'application/json' },
+      });
+       console.log("Therapy API raw response:", therapyResponse.data);
+        if (!therapyResponse.data.environmentId) {
+        console.error("environmentId is missing from backend response"); 
+        throw new Error("Therapy recommendation is missing environmentId");
+      }
+
+      if (therapyResponse.status === 200 && therapyResponse.data) {
+        // Ensure environmentId is included in the recommendation
+     const recommendationData = {
+  ...therapyResponse.data,
+  mentalHealthIssue: condition,
+};
+
+        console.log('Recommendation received:', recommendationData);
+       setRecommendation(recommendationData);
+      await cacheData(cacheKey, recommendationData);
       setIsLoading(false);
     }
-  };
-
+    } catch (error) {
+      if (retryCount < maxRetries) {
+        await new Promise((resolve) => setTimeout(resolve, 8000));
+        return saveResponsesAndGetRecommendation(retryCount + 1, maxRetries);
+      } else {
+        setError(error.message || 'Failed to get recommendation');
+        setIsLoading(false);
+      }
+    }
+  }, [parsedResponses, sessionId]);
   useEffect(() => {
     Animated.parallel([
       Animated.timing(fadeAnim, {
@@ -386,7 +284,7 @@ const RecommendationScreen = () => {
       Animated.loop(
         Animated.timing(rotateValue, {
           toValue: 1,
-          duration: 15000,
+          duration: 5000,
           useNativeDriver: true,
           easing: Easing.linear,
         })
@@ -394,38 +292,26 @@ const RecommendationScreen = () => {
     ]).start();
   }, [fadeAnim, slideAnim, rotateValue]);
 
-  const onGestureEvent = (event) => {
-    if (isDragging) {
-      const newAngle = rotateAngle + event.nativeEvent.translationX / 2;
-      setRotateAngle(newAngle);
-      rotateValue.value = newAngle;
-    }
-  };
-
-  const onHandlerStateChange = (event) => {
-    if (event.nativeEvent.state === State.BEGAN) {
-      setIsDragging(true);
-    } else if (event.nativeEvent.state === State.END) {
-      setIsDragging(false);
-    }
-  };
-
   const spin = rotateValue.interpolate({
     inputRange: [0, 1],
     outputRange: ['0deg', '360deg'],
   });
-  const imageRotation = isDragging ? `${rotateAngle}deg` : spin;
 
-  const handleStartTherapy = async () => {
+  const handleStartTherapy = useCallback(async () => {
     try {
       if (!recommendation) {
         throw new Error('No recommendation available');
       }
-      console.log('Navigating to TherapySessionScreen', recommendation);
+      console.log('Navigating to TherapyScreen with params:', {
+        environmentId: recommendation.environmentId,
+        therapy: recommendation.therapy,
+        mentalHealthIssue: recommendation.mentalHealthIssue,
+        sessionId,
+      });
       router.push({
         pathname: '/TherapyScreen',
         params: {
-          environment: recommendation.environmentId,
+          environmentId: recommendation.environmentId,
           therapy: recommendation.therapy,
           mentalHealthIssue: recommendation.mentalHealthIssue,
           sessionId,
@@ -435,7 +321,7 @@ const RecommendationScreen = () => {
       console.error('Error starting therapy:', err.message);
       Alert.alert('Error', `Failed to start therapy: ${err.message}`);
     }
-  };
+  }, [recommendation, sessionId]);
 
   if (isLoading) {
     return (
@@ -502,22 +388,23 @@ const RecommendationScreen = () => {
             <Text style={styles.therapyDescription}>{therapyDescription}</Text>
 
             <View style={styles.imageContainer}>
-              <PanGestureHandler onGestureEvent={onGestureEvent} onHandlerStateChange={onHandlerStateChange}>
-                <Animated.View style={styles.panoramaContainer}>
-                  <Animated.Image
-                    source={{ uri: environment.imageUrl }}
-                    style={[styles.environmentImage, spin]}
-                    resizeMode="cover"
-                    onError={(e) => console.error('Image load error:', e.nativeEvent.error)}
-                  />
-                  <View style={styles.panoramaOverlay}>
-                    <View style={styles.dragIndicator}>
-                      <Feather name="move" size={24} color="#FFFFFF" />
-                      <Text style={styles.dragText}>Drag to explore 360°</Text>
-                    </View>
+              <Animated.View
+                {...panResponder.panHandlers}
+                style={styles.panoramaContainer}
+              >
+                <Animated.Image
+                  source={{ uri: environment.imageUrl }}
+                  style={[styles.environmentImage, { transform: [{ rotate: spin }] }]}
+                  resizeMode="cover"
+                  onError={(e) => console.error('Image load error:', e.nativeEvent.error)}
+                />
+                <View style={styles.panoramaOverlay}>
+                  <View style={styles.dragIndicator}>
+                    <Feather name="move" size={24} color="#FFFFFF" />
+                    <Text style={styles.dragText}>Drag to explore 360°</Text>
                   </View>
-                </Animated.View>
-              </PanGestureHandler>
+                </View>
+              </Animated.View>
               <View style={styles.environmentBadge}>
                 <Text style={styles.environmentBadgeText}>{environment.title}</Text>
               </View>
@@ -573,6 +460,8 @@ const RecommendationScreen = () => {
     </SafeAreaView>
   );
 };
+
+export default RecommendationScreen;
 
 const styles = StyleSheet.create({
   container: {
@@ -631,41 +520,37 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   therapyDescription: {
-    fontSize: 14,
-    color: '#666666',
-    lineHeight: 20,
+    fontSize: 16,
+    color: '#444444',
+    marginTop: 8,
     marginBottom: 16,
   },
   imageContainer: {
-    position: 'relative',
-    width: '100%',
-    height: 250,
-    backgroundColor: '#000',
-    borderRadius: 8,
-    marginBottom: 12,
+    height: 200,
+    borderRadius: 12,
     overflow: 'hidden',
+    marginBottom: 16,
   },
   panoramaContainer: {
-    width: '100%',
-    height: '100%',
+    flex: 1,
   },
   environmentImage: {
     width: '100%',
     height: '100%',
   },
   panoramaOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.2)',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.3)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   dragIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 20,
   },
   dragText: {
     color: '#FFFFFF',
@@ -674,8 +559,8 @@ const styles = StyleSheet.create({
   },
   environmentBadge: {
     position: 'absolute',
-    bottom: 16,
-    left: 16,
+    bottom: 8,
+    right: 8,
     backgroundColor: '#6A8CAF',
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -687,114 +572,81 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   infoSection: {
-    padding: 0,
+    marginTop: 16,
   },
   environmentDescriptionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333333',
+    fontSize: 18,
+    fontWeight: 'bold',
     marginBottom: 8,
   },
   environmentDescription: {
     fontSize: 14,
     color: '#666666',
-    lineHeight: 20,
-    marginBottom: 16,
+    marginBottom: 12,
   },
   benefitsContainer: {
-    marginBottom: 16,
+    marginTop: 12,
   },
   benefitsTitle: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#333333',
+    fontWeight: 'bold',
     marginBottom: 8,
   },
   benefitItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 6,
   },
   benefitText: {
+    marginLeft: 8,
     fontSize: 14,
-    color: '#666666',
-    marginLeft: 10,
-    flex: 1,
+    color: '#444444',
   },
   noBenefitsText: {
     fontSize: 14,
-    color: '#666666',
-    fontStyle: 'italic',
+    color: '#999999',
   },
   sessionInfoContainer: {
-    backgroundColor: '#F0F4F8',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
+    flexDirection: 'row',
+    marginTop: 16,
   },
   sessionInfoItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
+    marginRight: 16,
   },
   sessionInfoText: {
+    marginLeft: 6,
     fontSize: 14,
     color: '#666666',
-    marginLeft: 10,
   },
   buttonContainer: {
-    padding: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
   },
   startButton: {
-    backgroundColor: '#6A8CAF',
-    borderRadius: 8,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 14,
-    marginBottom: 12,
+    backgroundColor: '#6A8CAF',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 30,
   },
   startButtonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
     color: '#FFFFFF',
-    marginLeft: 10,
+    fontSize: 16,
+    marginLeft: 8,
   },
   alternativeButton: {
-    alignItems: 'center',
-    paddingVertical: 8,
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
   },
   alternativeButtonText: {
     color: '#6A8CAF',
     fontSize: 16,
   },
-  loadingText: {
-    fontSize: 18,
-    color: '#333333',
-    textAlign: 'center',
-    marginTop: 20,
-  },
-  errorText: {
-    fontSize: 16,
-    color: '#FF6B6B',
-    textAlign: 'center',
-    marginBottom: 20,
-    marginHorizontal: 20,
-  },
-  retryButton: {
-    backgroundColor: '#6A8CAF',
-    borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-  },
-  retryButtonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-  },
 });
-
-export default RecommendationScreen;

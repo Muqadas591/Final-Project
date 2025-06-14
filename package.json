@@ -65,6 +65,7 @@
     "react-native-video": "^6.10.1",
     "react-native-web": "~0.19.13",
     "react-native-webview": "^13.12.5",
+    "react-native-youtube-iframe": "^2.3.0",
     "three": "^0.173.0"
   },
   "devDependencies": {
