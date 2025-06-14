@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "228824714582",
+    "project_id": "react-native-mentalhealth",
+    "storage_bucket": "react-native-mentalhealth.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:228824714582:android:6b690b4d15935a7fabdaf7",
+        "android_client_info": {
+          "package_name": "com.example.myapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "228824714582-p61vgkvajo2u15nh9qufbhg86r05at3a.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC7W9hsWTTfWhGgfOo_9nXFRJDlMHpkGSs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "228824714582-p61vgkvajo2u15nh9qufbhg86r05at3a.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

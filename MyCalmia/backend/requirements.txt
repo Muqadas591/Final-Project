@@ -1,0 +1,7 @@
+flask
+scikit-learn
+joblib
+deepface
+opencv-python
+transformers
+torch

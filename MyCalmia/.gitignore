@@ -1,0 +1,54 @@
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+# .gitignore
+venv/
+__pycache__/
+*.pyc
+.DS_Store
+=======
+>>>>>>> 2164f8f469a630642ed5047d4d2739dae159db70
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+
+# dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.pem
+
+# local env files
+.env*.local
+
+# typescript
+*.tsbuildinfo
+
+app-example
+<<<<<<< HEAD
+
+venv/lib/site-packages/
+=======
+>>>>>>> af2ff0ce (Initial commit)
+>>>>>>> 2164f8f469a630642ed5047d4d2739dae159db70

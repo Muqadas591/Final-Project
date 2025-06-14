@@ -1,0 +1,10 @@
+flask
+scikit-learn
+joblib
+deepface
+opencv-python
+transformers
+torch
+google-api-python-client
+httplib2
+requests
