@@ -37,9 +37,20 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Initialize Firebase
-cred = credentials.Certificate('../firebase/mental-health-app-68c4b-firebase-adminsdk-fbsvc-18a9b4b239.json')
-firebase_admin.initialize_app(cred)
-db = firestore.client()
+# Initialize Firebase using environment variable
+try:
+    firebase_credentials_json = os.environ.get("FIREBASE_CREDENTIALS")
+    if not firebase_credentials_json:
+        raise ValueError("Missing FIREBASE_CREDENTIALS environment variable.")
+    
+    cred_dict = json.loads(firebase_credentials_json)
+    cred = credentials.Certificate(cred_dict)
+    firebase_admin.initialize_app(cred)
+    db = firestore.client()
+except Exception as firebase_err:
+    logger.error(f"Firebase initialization error: {str(firebase_err)}")
+    raise
+
 
 # Load models
 pre_therapy_model = joblib.load("models/pre_therapy_model.pkl")

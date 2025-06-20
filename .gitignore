@@ -108,3 +108,8 @@ expo-env.d.ts
 # @end expo-cliMyCalmia/firebase/*.json 
 backend/credentials.json 
 calmiayoutube-*.json 
+
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
