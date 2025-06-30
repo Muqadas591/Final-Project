@@ -1,52 +1,43 @@
-import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, Dimensions } from 'react-native';
-import { WebView } from 'react-native-webview'; // For 360° video
-import { Gyroscope } from 'expo-sensors';
+import React from 'react';
+import { View, StyleSheet, Dimensions, Text } from 'react-native';
+import { useLocalSearchParams } from 'expo-router';
+import YoutubePlayer from 'react-native-youtube-iframe';
 
 const { width, height } = Dimensions.get('window');
 
-const VRVideoScreen = () => {
-  const [rotation, setRotation] = useState({ x: 0, y: 0 });
+const extractYouTubeId = (url) => {
+  if (!url) return null;
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+  const match = url.match(regExp);
+  return match && match[2].length === 11 ? match[2] : null;
+};
 
-  useEffect(() => {
-    let subscription;
-    const startGyroscope = async () => {
-      try {
-        subscription = await Gyroscope.addListener(({ x, y }) => {
-          setRotation({ x: x * 30, y: y * 30 }); // Adjust sensitivity
-        });
-      } catch (error) {
-        console.error("Gyroscope error:", error);
-      }
-    };
-
-    startGyroscope();
-
-    return () => {
-      if (subscription) {
-        subscription.remove();
-      }
-    };
-  }, []);
-
-  const youtubeVideoId = "mBWj443FNGs"; // Extracted from YouTube link
+const VideoScreen = () => {
+  const { videoUrl } = useLocalSearchParams();
+  const videoId = extractYouTubeId(videoUrl);
 
   return (
     <View style={styles.container}>
-      <WebView
-        source={{
-          uri: `https://www.youtube.com/embed/${youtubeVideoId}?enablejsapi=1&controls=1&autoplay=1&vr=1`
-        }}
-        style={styles.video}
-        allowsFullscreenVideo
-      />
+      {videoId ? (
+        <YoutubePlayer
+          height={height}
+          width={width}
+          play={true}
+          videoId={videoId}
+        />
+      ) : (
+        <View style={styles.videoPlaceholder}>
+          <Text style={styles.videoPlaceholderText}>Video not available</Text>
+        </View>
+      )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: 'black' },
-  video: { width, height }
+  videoPlaceholder: { flex: 1, backgroundColor: '#333', justifyContent: 'center', alignItems: 'center' },
+  videoPlaceholderText: { color: '#FFF', fontSize: 18 },
 });
 
-export default VRVideoScreen;
+export default VideoScreen;

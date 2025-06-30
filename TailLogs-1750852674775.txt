@@ -1,0 +1,238 @@
+----------------------------------------
+/var/log/nginx/error.log
+----------------------------------------
+2025/06/25 11:39:25 [warn] 2528#2528: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2025/06/25 11:39:26 [warn] 2563#2563: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2025/06/25 11:39:26 [warn] 2564#2564: could not build optimal types_hash, you should increase either types_hash_max_size: 1024 or types_hash_bucket_size: 64; ignoring types_hash_bucket_size
+2025/06/25 11:44:23 [error] 2567#2567: *52 connect() failed (111: Connection refused) while connecting to upstream, client: 172.31.14.197, server: , request: "GET / HTTP/1.1", upstream: "http://127.0.0.1:8000/", host: "calmaia-env-new.eba-ksuaji6t.us-east-1.elasticbeanstalk.com"
+2025/06/25 11:44:23 [error] 2567#2567: *52 connect() failed (111: Connection refused) while connecting to upstream, client: 172.31.14.197, server: , request: "GET /favicon.ico HTTP/1.1", upstream: "http://127.0.0.1:8000/favicon.ico", host: "calmaia-env-new.eba-ksuaji6t.us-east-1.elasticbeanstalk.com", referrer: "http://calmaia-env-new.eba-ksuaji6t.us-east-1.elasticbeanstalk.com/"
+2025/06/25 11:44:34 [error] 2567#2567: *54 connect() failed (111: Connection refused) while connecting to upstream, client: 172.31.25.15, server: , request: "GET / HTTP/1.1", upstream: "http://127.0.0.1:8000/", host: "calmaia-env-new.eba-ksuaji6t.us-east-1.elasticbeanstalk.com"
+2025/06/25 11:44:38 [error] 2567#2567: *52 connect() failed (111: Connection refused) while connecting to upstream, client: 172.31.14.197, server: , request: "GET /favicon.ico HTTP/1.1", upstream: "http://127.0.0.1:8000/favicon.ico", host: "calmaia-env-new.eba-ksuaji6t.us-east-1.elasticbeanstalk.com"
+2025/06/25 11:44:38 [error] 2567#2567: *54 connect() failed (111: Connection refused) while connecting to upstream, client: 172.31.25.15, server: , request: "GET /favicon.ico HTTP/1.1", upstream: "http://127.0.0.1:8000/favicon.ico", host: "calmaia-env-new.eba-ksuaji6t.us-east-1.elasticbeanstalk.com"
+
+
+----------------------------------------
+/var/log/web.stdout.log
+----------------------------------------
+Jun 25 11:39:28 ip-172-31-20-2 web[2597]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.9/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+Jun 25 11:39:28 ip-172-31-20-2 web[2597]:    return self.load_wsgiapp()
+Jun 25 11:39:28 ip-172-31-20-2 web[2597]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.9/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+Jun 25 11:39:28 ip-172-31-20-2 web[2597]:    return util.import_app(self.app_uri)
+Jun 25 11:39:28 ip-172-31-20-2 web[2597]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.9/site-packages/gunicorn/util.py", line 370, in import_app
+Jun 25 11:39:28 ip-172-31-20-2 web[2597]:    mod = importlib.import_module(module)
+Jun 25 11:39:28 ip-172-31-20-2 web[2597]:  File "/usr/lib64/python3.9/importlib/__init__.py", line 127, in import_module
+Jun 25 11:39:28 ip-172-31-20-2 web[2597]:    return _bootstrap._gcd_import(name[level:], package, level)
+Jun 25 11:39:28 ip-172-31-20-2 web[2597]:  File "<frozen importlib._bootstrap>", line 1030, in _gcd_import
+Jun 25 11:39:28 ip-172-31-20-2 web[2597]:  File "<frozen importlib._bootstrap>", line 1007, in _find_and_load
+Jun 25 11:39:28 ip-172-31-20-2 web[2597]:  File "<frozen importlib._bootstrap>", line 986, in _find_and_load_unlocked
+Jun 25 11:39:28 ip-172-31-20-2 web[2597]:  File "<frozen importlib._bootstrap>", line 680, in _load_unlocked
+Jun 25 11:39:28 ip-172-31-20-2 web[2597]:  File "<frozen importlib._bootstrap_external>", line 850, in exec_module
+Jun 25 11:39:28 ip-172-31-20-2 web[2597]:  File "<frozen importlib._bootstrap>", line 228, in _call_with_frames_removed
+Jun 25 11:39:28 ip-172-31-20-2 web[2597]:  File "/var/app/current/application.py", line 5, in <module>
+Jun 25 11:39:28 ip-172-31-20-2 web[2597]:    from app import app as application
+Jun 25 11:39:28 ip-172-31-20-2 web[2597]:  File "/var/app/current/backend/app.py", line 2, in <module>
+Jun 25 11:39:28 ip-172-31-20-2 web[2597]:    from flask_cors import CORS
+Jun 25 11:39:28 ip-172-31-20-2 web[2597]: ModuleNotFoundError: No module named 'flask_cors'
+Jun 25 11:39:28 ip-172-31-20-2 web[2597]: [2025-06-25 11:39:28 +0000] [2597] [INFO] Worker exiting (pid: 2597)
+Jun 25 11:39:28 ip-172-31-20-2 web[2597]: Error importing app from backend: No module named 'flask_cors'
+Jun 25 11:39:28 ip-172-31-20-2 web[2593]: [2025-06-25 11:39:28 +0000] [2593] [ERROR] Worker (pid:2597) exited with code 3
+Jun 25 11:39:28 ip-172-31-20-2 web[2593]: [2025-06-25 11:39:28 +0000] [2593] [ERROR] Shutting down: Master
+Jun 25 11:39:28 ip-172-31-20-2 web[2593]: [2025-06-25 11:39:28 +0000] [2593] [ERROR] Reason: Worker failed to boot.
+Jun 25 11:39:28 ip-172-31-20-2 web[2599]: [2025-06-25 11:39:28 +0000] [2599] [INFO] Starting gunicorn 23.0.0
+Jun 25 11:39:28 ip-172-31-20-2 web[2599]: [2025-06-25 11:39:28 +0000] [2599] [INFO] Listening at: http://127.0.0.1:8000 (2599)
+Jun 25 11:39:28 ip-172-31-20-2 web[2599]: [2025-06-25 11:39:28 +0000] [2599] [INFO] Using worker: sync
+Jun 25 11:39:28 ip-172-31-20-2 web[2603]: [2025-06-25 11:39:28 +0000] [2603] [INFO] Booting worker with pid: 2603
+Jun 25 11:39:28 ip-172-31-20-2 web[2603]: [2025-06-25 11:39:28 +0000] [2603] [ERROR] Exception in worker process
+Jun 25 11:39:28 ip-172-31-20-2 web[2603]: Traceback (most recent call last):
+Jun 25 11:39:28 ip-172-31-20-2 web[2603]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.9/site-packages/gunicorn/arbiter.py", line 608, in spawn_worker
+Jun 25 11:39:28 ip-172-31-20-2 web[2603]:    worker.init_process()
+Jun 25 11:39:28 ip-172-31-20-2 web[2603]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.9/site-packages/gunicorn/workers/base.py", line 135, in init_process
+Jun 25 11:39:28 ip-172-31-20-2 web[2603]:    self.load_wsgi()
+Jun 25 11:39:28 ip-172-31-20-2 web[2603]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.9/site-packages/gunicorn/workers/base.py", line 147, in load_wsgi
+Jun 25 11:39:28 ip-172-31-20-2 web[2603]:    self.wsgi = self.app.wsgi()
+Jun 25 11:39:28 ip-172-31-20-2 web[2603]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.9/site-packages/gunicorn/app/base.py", line 66, in wsgi
+Jun 25 11:39:28 ip-172-31-20-2 web[2603]:    self.callable = self.load()
+Jun 25 11:39:28 ip-172-31-20-2 web[2603]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.9/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+Jun 25 11:39:28 ip-172-31-20-2 web[2603]:    return self.load_wsgiapp()
+Jun 25 11:39:28 ip-172-31-20-2 web[2603]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.9/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+Jun 25 11:39:28 ip-172-31-20-2 web[2603]:    return util.import_app(self.app_uri)
+Jun 25 11:39:28 ip-172-31-20-2 web[2603]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.9/site-packages/gunicorn/util.py", line 370, in import_app
+Jun 25 11:39:28 ip-172-31-20-2 web[2603]:    mod = importlib.import_module(module)
+Jun 25 11:39:28 ip-172-31-20-2 web[2603]:  File "/usr/lib64/python3.9/importlib/__init__.py", line 127, in import_module
+Jun 25 11:39:28 ip-172-31-20-2 web[2603]:    return _bootstrap._gcd_import(name[level:], package, level)
+Jun 25 11:39:28 ip-172-31-20-2 web[2603]:  File "<frozen importlib._bootstrap>", line 1030, in _gcd_import
+Jun 25 11:39:28 ip-172-31-20-2 web[2603]:  File "<frozen importlib._bootstrap>", line 1007, in _find_and_load
+Jun 25 11:39:28 ip-172-31-20-2 web[2603]:  File "<frozen importlib._bootstrap>", line 986, in _find_and_load_unlocked
+Jun 25 11:39:28 ip-172-31-20-2 web[2603]:  File "<frozen importlib._bootstrap>", line 680, in _load_unlocked
+Jun 25 11:39:28 ip-172-31-20-2 web[2603]:  File "<frozen importlib._bootstrap_external>", line 850, in exec_module
+Jun 25 11:39:28 ip-172-31-20-2 web[2603]:  File "<frozen importlib._bootstrap>", line 228, in _call_with_frames_removed
+Jun 25 11:39:28 ip-172-31-20-2 web[2603]:  File "/var/app/current/application.py", line 5, in <module>
+Jun 25 11:39:28 ip-172-31-20-2 web[2603]:    from app import app as application
+Jun 25 11:39:28 ip-172-31-20-2 web[2603]:  File "/var/app/current/backend/app.py", line 2, in <module>
+Jun 25 11:39:28 ip-172-31-20-2 web[2603]:    from flask_cors import CORS
+Jun 25 11:39:28 ip-172-31-20-2 web[2603]: ModuleNotFoundError: No module named 'flask_cors'
+Jun 25 11:39:28 ip-172-31-20-2 web[2603]: [2025-06-25 11:39:28 +0000] [2603] [INFO] Worker exiting (pid: 2603)
+Jun 25 11:39:28 ip-172-31-20-2 web[2603]: Error importing app from backend: No module named 'flask_cors'
+Jun 25 11:39:28 ip-172-31-20-2 web[2599]: [2025-06-25 11:39:28 +0000] [2599] [ERROR] Worker (pid:2603) exited with code 3
+Jun 25 11:39:28 ip-172-31-20-2 web[2599]: [2025-06-25 11:39:28 +0000] [2599] [ERROR] Shutting down: Master
+Jun 25 11:39:28 ip-172-31-20-2 web[2599]: [2025-06-25 11:39:28 +0000] [2599] [ERROR] Reason: Worker failed to boot.
+Jun 25 11:39:29 ip-172-31-20-2 web[2605]: [2025-06-25 11:39:29 +0000] [2605] [INFO] Starting gunicorn 23.0.0
+Jun 25 11:39:29 ip-172-31-20-2 web[2605]: [2025-06-25 11:39:29 +0000] [2605] [INFO] Listening at: http://127.0.0.1:8000 (2605)
+Jun 25 11:39:29 ip-172-31-20-2 web[2605]: [2025-06-25 11:39:29 +0000] [2605] [INFO] Using worker: sync
+Jun 25 11:39:29 ip-172-31-20-2 web[2609]: [2025-06-25 11:39:29 +0000] [2609] [INFO] Booting worker with pid: 2609
+Jun 25 11:39:29 ip-172-31-20-2 web[2609]: [2025-06-25 11:39:29 +0000] [2609] [ERROR] Exception in worker process
+Jun 25 11:39:29 ip-172-31-20-2 web[2609]: Traceback (most recent call last):
+Jun 25 11:39:29 ip-172-31-20-2 web[2609]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.9/site-packages/gunicorn/arbiter.py", line 608, in spawn_worker
+Jun 25 11:39:29 ip-172-31-20-2 web[2609]:    worker.init_process()
+Jun 25 11:39:29 ip-172-31-20-2 web[2609]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.9/site-packages/gunicorn/workers/base.py", line 135, in init_process
+Jun 25 11:39:29 ip-172-31-20-2 web[2609]:    self.load_wsgi()
+Jun 25 11:39:29 ip-172-31-20-2 web[2609]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.9/site-packages/gunicorn/workers/base.py", line 147, in load_wsgi
+Jun 25 11:39:29 ip-172-31-20-2 web[2609]:    self.wsgi = self.app.wsgi()
+Jun 25 11:39:29 ip-172-31-20-2 web[2609]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.9/site-packages/gunicorn/app/base.py", line 66, in wsgi
+Jun 25 11:39:29 ip-172-31-20-2 web[2609]:    self.callable = self.load()
+Jun 25 11:39:29 ip-172-31-20-2 web[2609]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.9/site-packages/gunicorn/app/wsgiapp.py", line 57, in load
+Jun 25 11:39:29 ip-172-31-20-2 web[2609]:    return self.load_wsgiapp()
+Jun 25 11:39:29 ip-172-31-20-2 web[2609]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.9/site-packages/gunicorn/app/wsgiapp.py", line 47, in load_wsgiapp
+Jun 25 11:39:29 ip-172-31-20-2 web[2609]:    return util.import_app(self.app_uri)
+Jun 25 11:39:29 ip-172-31-20-2 web[2609]:  File "/var/app/venv/staging-LQM1lest/lib64/python3.9/site-packages/gunicorn/util.py", line 370, in import_app
+Jun 25 11:39:29 ip-172-31-20-2 web[2609]:    mod = importlib.import_module(module)
+Jun 25 11:39:29 ip-172-31-20-2 web[2609]:  File "/usr/lib64/python3.9/importlib/__init__.py", line 127, in import_module
+Jun 25 11:39:29 ip-172-31-20-2 web[2609]:    return _bootstrap._gcd_import(name[level:], package, level)
+Jun 25 11:39:29 ip-172-31-20-2 web[2609]:  File "<frozen importlib._bootstrap>", line 1030, in _gcd_import
+Jun 25 11:39:29 ip-172-31-20-2 web[2609]:  File "<frozen importlib._bootstrap>", line 1007, in _find_and_load
+Jun 25 11:39:29 ip-172-31-20-2 web[2609]:  File "<frozen importlib._bootstrap>", line 986, in _find_and_load_unlocked
+Jun 25 11:39:29 ip-172-31-20-2 web[2609]:  File "<frozen importlib._bootstrap>", line 680, in _load_unlocked
+Jun 25 11:39:29 ip-172-31-20-2 web[2609]:  File "<frozen importlib._bootstrap_external>", line 850, in exec_module
+Jun 25 11:39:29 ip-172-31-20-2 web[2609]:  File "<frozen importlib._bootstrap>", line 228, in _call_with_frames_removed
+Jun 25 11:39:29 ip-172-31-20-2 web[2609]:  File "/var/app/current/application.py", line 5, in <module>
+Jun 25 11:39:29 ip-172-31-20-2 web[2609]:    from app import app as application
+Jun 25 11:39:29 ip-172-31-20-2 web[2609]:  File "/var/app/current/backend/app.py", line 2, in <module>
+Jun 25 11:39:29 ip-172-31-20-2 web[2609]:    from flask_cors import CORS
+Jun 25 11:39:29 ip-172-31-20-2 web[2609]: ModuleNotFoundError: No module named 'flask_cors'
+Jun 25 11:39:29 ip-172-31-20-2 web[2609]: [2025-06-25 11:39:29 +0000] [2609] [INFO] Worker exiting (pid: 2609)
+Jun 25 11:39:29 ip-172-31-20-2 web[2609]: Error importing app from backend: No module named 'flask_cors'
+Jun 25 11:39:29 ip-172-31-20-2 web[2605]: [2025-06-25 11:39:29 +0000] [2605] [ERROR] Worker (pid:2609) exited with code 3
+Jun 25 11:39:29 ip-172-31-20-2 web[2605]: [2025-06-25 11:39:29 +0000] [2605] [ERROR] Shutting down: Master
+Jun 25 11:39:29 ip-172-31-20-2 web[2605]: [2025-06-25 11:39:29 +0000] [2605] [ERROR] Reason: Worker failed to boot.
+
+
+----------------------------------------
+/var/log/eb-engine.log
+----------------------------------------
+2025/06/25 11:48:35.755664 [INFO] reading event message file
+2025/06/25 11:48:35.756015 [INFO] Engine received EB command cfn-hup-exec
+
+2025/06/25 11:48:35.824865 [INFO] Running command: /opt/aws/bin/cfn-get-metadata -s arn:aws:cloudformation:us-east-1:476768693731:stack/awseb-e-rwq4ct2unm-stack/3e422540-51b8-11f0-b743-0edbeaaa4c53 -r AWSEBAutoScalingGroup --region us-east-1
+2025/06/25 11:48:36.145358 [INFO] Running command: /opt/aws/bin/cfn-get-metadata -s arn:aws:cloudformation:us-east-1:476768693731:stack/awseb-e-rwq4ct2unm-stack/3e422540-51b8-11f0-b743-0edbeaaa4c53 -r AWSEBBeanstalkMetadata --region us-east-1
+2025/06/25 11:48:36.474860 [INFO] checking whether command app-deploy is applicable to this instance...
+2025/06/25 11:48:36.474877 [INFO] this command is applicable to the instance, thus instance should execute command
+2025/06/25 11:48:36.474880 [INFO] Engine command: (app-deploy)
+
+2025/06/25 11:48:36.474885 [INFO] Downloading EB Application...
+2025/06/25 11:48:36.474887 [INFO] Region: us-east-1
+2025/06/25 11:48:36.474889 [INFO] envID: e-rwq4ct2unm
+2025/06/25 11:48:36.474891 [INFO] envBucket: elasticbeanstalk-us-east-1-476768693731
+2025/06/25 11:48:36.474893 [INFO] accountID: 476768693731
+2025/06/25 11:48:36.474896 [INFO] Using manifest file name from command request
+2025/06/25 11:48:36.474903 [INFO] Manifest name is : manifest_1750852113562
+2025/06/25 11:48:36.474905 [INFO] Download app version manifest
+2025/06/25 11:48:36.475106 [INFO] Downloading: bucket: elasticbeanstalk-us-east-1-476768693731, object: resources/environments/e-rwq4ct2unm/_runtime/versions/manifest_1750852113562, expected bucket owner: 476768693731
+2025/06/25 11:48:36.514392 [INFO] Download successful108bytes downloaded
+2025/06/25 11:48:36.514679 [INFO] Trying to read and parse version manifest...
+2025/06/25 11:48:36.519778 [INFO] Downloading: bucket: elasticbeanstalk-us-east-1-476768693731, object: resources/environments/e-rwq4ct2unm/_runtime/_versions/CalmiaClean/app-be29-250625_164506972061, expected bucket owner: 476768693731
+2025/06/25 11:48:36.782360 [INFO] Download successful53948381bytes downloaded
+2025/06/25 11:48:36.840707 [INFO] Executing instruction: ElectLeader
+2025/06/25 11:48:36.840721 [INFO] Running leader election for instance i-03c12c718c7ed371f...
+2025/06/25 11:48:36.840725 [INFO] Calling the cfn-elect-cmd-leader to elect the command leader.
+2025/06/25 11:48:36.840739 [INFO] Running command: /opt/aws/bin/cfn-elect-cmd-leader --stack arn:aws:cloudformation:us-east-1:476768693731:stack/awseb-e-rwq4ct2unm-stack/3e422540-51b8-11f0-b743-0edbeaaa4c53 --command-name ElasticBeanstalkCommand-AWSEBAutoScalingGroup --invocation-id 5ce42cd9-1a2e-4b53-a537-830f1b22f705 --listener-id i-03c12c718c7ed371f --region us-east-1
+2025/06/25 11:48:37.160520 [INFO] Instance is Leader.
+2025/06/25 11:48:37.160577 [INFO] Executing instruction: stopSqsd
+2025/06/25 11:48:37.160583 [INFO] This is a web server environment instance, skip stop sqsd daemon ...
+2025/06/25 11:48:37.160587 [INFO] Executing instruction: PreBuildEbExtension
+2025/06/25 11:48:37.160590 [INFO] Starting executing the config set Infra-EmbeddedPreBuild.
+2025/06/25 11:48:37.160605 [INFO] Running command: /opt/aws/bin/cfn-init -s arn:aws:cloudformation:us-east-1:476768693731:stack/awseb-e-rwq4ct2unm-stack/3e422540-51b8-11f0-b743-0edbeaaa4c53 -r AWSEBAutoScalingGroup --region us-east-1 --configsets Infra-EmbeddedPreBuild
+2025/06/25 11:49:04.949060 [INFO] Error occurred during build: Command 03_install_requirements failed
+
+2025/06/25 11:49:04.949099 [ERROR] An error occurred during execution of command [app-deploy] - [PreBuildEbExtension]. Stop running the command. Error: EbExtension build failed. Please refer to /var/log/cfn-init.log for more details. 
+
+2025/06/25 11:49:04.949103 [INFO] Executing cleanup logic
+2025/06/25 11:49:04.949196 [INFO] CommandService Response: {"status":"FAILURE","api_version":"1.0","results":[{"status":"FAILURE","msg":"Engine execution has encountered an error.","returncode":1,"events":[{"msg":"Instance deployment failed. For details, see 'eb-engine.log'.","timestamp":1750852144949,"severity":"ERROR"}]}]}
+
+2025/06/25 11:49:04.949835 [INFO] Platform Engine finished execution on command: app-deploy
+
+2025/06/25 11:56:36.865487 [INFO] Starting...
+2025/06/25 11:56:36.865546 [INFO] Starting EBPlatform-PlatformEngine
+2025/06/25 11:56:36.865589 [INFO] reading event message file
+2025/06/25 11:56:36.865934 [INFO] Engine received EB command cfn-hup-exec
+
+2025/06/25 11:56:36.932116 [INFO] Running command: /opt/aws/bin/cfn-get-metadata -s arn:aws:cloudformation:us-east-1:476768693731:stack/awseb-e-rwq4ct2unm-stack/3e422540-51b8-11f0-b743-0edbeaaa4c53 -r AWSEBAutoScalingGroup --region us-east-1
+2025/06/25 11:56:37.247013 [INFO] Running command: /opt/aws/bin/cfn-get-metadata -s arn:aws:cloudformation:us-east-1:476768693731:stack/awseb-e-rwq4ct2unm-stack/3e422540-51b8-11f0-b743-0edbeaaa4c53 -r AWSEBBeanstalkMetadata --region us-east-1
+2025/06/25 11:56:37.553322 [INFO] checking whether command app-deploy is applicable to this instance...
+2025/06/25 11:56:37.553338 [INFO] this command is applicable to the instance, thus instance should execute command
+2025/06/25 11:56:37.553343 [INFO] Engine command: (app-deploy)
+
+2025/06/25 11:56:37.553347 [INFO] Downloading EB Application...
+2025/06/25 11:56:37.553350 [INFO] Region: us-east-1
+2025/06/25 11:56:37.553353 [INFO] envID: e-rwq4ct2unm
+2025/06/25 11:56:37.553355 [INFO] envBucket: elasticbeanstalk-us-east-1-476768693731
+2025/06/25 11:56:37.553358 [INFO] accountID: 476768693731
+2025/06/25 11:56:37.553361 [INFO] Using manifest file name from command request
+2025/06/25 11:56:37.553367 [INFO] Manifest name is : manifest_1750852594461
+2025/06/25 11:56:37.553370 [INFO] Download app version manifest
+2025/06/25 11:56:37.553603 [INFO] Downloading: bucket: elasticbeanstalk-us-east-1-476768693731, object: resources/environments/e-rwq4ct2unm/_runtime/versions/manifest_1750852594461, expected bucket owner: 476768693731
+2025/06/25 11:56:37.587493 [INFO] Download successful108bytes downloaded
+2025/06/25 11:56:37.587645 [INFO] Trying to read and parse version manifest...
+2025/06/25 11:56:37.592645 [INFO] Downloading: bucket: elasticbeanstalk-us-east-1-476768693731, object: resources/environments/e-rwq4ct2unm/_runtime/_versions/CalmiaClean/app-be29-250625_165430819481, expected bucket owner: 476768693731
+2025/06/25 11:56:37.817232 [INFO] Download successful53952612bytes downloaded
+2025/06/25 11:56:37.890479 [INFO] Executing instruction: ElectLeader
+2025/06/25 11:56:37.890493 [INFO] Running leader election for instance i-03c12c718c7ed371f...
+2025/06/25 11:56:37.890512 [INFO] Calling the cfn-elect-cmd-leader to elect the command leader.
+2025/06/25 11:56:37.890528 [INFO] Running command: /opt/aws/bin/cfn-elect-cmd-leader --stack arn:aws:cloudformation:us-east-1:476768693731:stack/awseb-e-rwq4ct2unm-stack/3e422540-51b8-11f0-b743-0edbeaaa4c53 --command-name ElasticBeanstalkCommand-AWSEBAutoScalingGroup --invocation-id 3f7078a1-f0a7-4c19-bf31-d2b33519625c --listener-id i-03c12c718c7ed371f --region us-east-1
+2025/06/25 11:56:38.208843 [INFO] Instance is Leader.
+2025/06/25 11:56:38.208897 [INFO] Executing instruction: stopSqsd
+2025/06/25 11:56:38.208903 [INFO] This is a web server environment instance, skip stop sqsd daemon ...
+2025/06/25 11:56:38.208907 [INFO] Executing instruction: PreBuildEbExtension
+2025/06/25 11:56:38.208910 [INFO] Starting executing the config set Infra-EmbeddedPreBuild.
+2025/06/25 11:56:38.208926 [INFO] Running command: /opt/aws/bin/cfn-init -s arn:aws:cloudformation:us-east-1:476768693731:stack/awseb-e-rwq4ct2unm-stack/3e422540-51b8-11f0-b743-0edbeaaa4c53 -r AWSEBAutoScalingGroup --region us-east-1 --configsets Infra-EmbeddedPreBuild
+2025/06/25 11:57:05.284688 [INFO] Error occurred during build: Command 03_install_requirements failed
+
+2025/06/25 11:57:05.284721 [ERROR] An error occurred during execution of command [app-deploy] - [PreBuildEbExtension]. Stop running the command. Error: EbExtension build failed. Please refer to /var/log/cfn-init.log for more details. 
+
+2025/06/25 11:57:05.284739 [INFO] Executing cleanup logic
+2025/06/25 11:57:05.284825 [INFO] CommandService Response: {"status":"FAILURE","api_version":"1.0","results":[{"status":"FAILURE","msg":"Engine execution has encountered an error.","returncode":1,"events":[{"msg":"Instance deployment failed. For details, see 'eb-engine.log'.","timestamp":1750852625284,"severity":"ERROR"}]}]}
+
+2025/06/25 11:57:05.285762 [INFO] Platform Engine finished execution on command: app-deploy
+
+2025/06/25 11:57:54.100375 [INFO] Starting...
+2025/06/25 11:57:54.100433 [INFO] Starting EBPlatform-PlatformEngine
+2025/06/25 11:57:54.100472 [INFO] reading event message file
+2025/06/25 11:57:54.100813 [INFO] Engine received EB command cfn-hup-exec
+
+2025/06/25 11:57:54.171248 [INFO] Running command: /opt/aws/bin/cfn-get-metadata -s arn:aws:cloudformation:us-east-1:476768693731:stack/awseb-e-rwq4ct2unm-stack/3e422540-51b8-11f0-b743-0edbeaaa4c53 -r AWSEBAutoScalingGroup --region us-east-1
+2025/06/25 11:57:54.476321 [INFO] Running command: /opt/aws/bin/cfn-get-metadata -s arn:aws:cloudformation:us-east-1:476768693731:stack/awseb-e-rwq4ct2unm-stack/3e422540-51b8-11f0-b743-0edbeaaa4c53 -r AWSEBBeanstalkMetadata --region us-east-1
+2025/06/25 11:57:54.774766 [INFO] checking whether command tail-log is applicable to this instance...
+2025/06/25 11:57:54.774780 [INFO] this command is applicable to the instance, thus instance should execute command
+2025/06/25 11:57:54.774783 [INFO] Engine command: (tail-log)
+
+2025/06/25 11:57:54.774838 [INFO] Executing instruction: GetTailLogs
+2025/06/25 11:57:54.774841 [INFO] Tail Logs...
+2025/06/25 11:57:54.775190 [INFO] Running command: tail -n 100 /var/log/nginx/error.log
+2025/06/25 11:57:54.777446 [INFO] Running command: tail -n 100 /var/log/web.stdout.log
+2025/06/25 11:57:54.779516 [INFO] Running command: tail -n 100 /var/log/eb-engine.log
+
+
+----------------------------------------
+/var/log/eb-hooks.log
+----------------------------------------
+
+
+----------------------------------------
+/var/log/nginx/access.log
+----------------------------------------
+172.31.14.197 - - [25/Jun/2025:11:44:23 +0000] "GET / HTTP/1.1" 502 552 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36" "223.123.8.49"
+172.31.14.197 - - [25/Jun/2025:11:44:23 +0000] "GET /favicon.ico HTTP/1.1" 502 552 "http://calmaia-env-new.eba-ksuaji6t.us-east-1.elasticbeanstalk.com/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36" "223.123.8.49"
+172.31.25.15 - - [25/Jun/2025:11:44:34 +0000] "GET / HTTP/1.1" 502 552 "-" "Mozilla/5.0 (Linux; Android 10; HUAWEI P30 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.105 Mobile Safari/537.36" "123.6.49.15"
+172.31.14.197 - - [25/Jun/2025:11:44:38 +0000] "GET /favicon.ico HTTP/1.1" 502 552 "-" "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36" "123.6.49.18"
+172.31.25.15 - - [25/Jun/2025:11:44:38 +0000] "GET /favicon.ico HTTP/1.1" 502 552 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" "123.6.49.15"
+
+

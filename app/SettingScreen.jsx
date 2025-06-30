@@ -205,6 +205,9 @@ const SettingScreen = () => {
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           {/* Header */}
           <View style={styles.header}>
+            <TouchableOpacity style={{ padding: 8, marginRight: 8 }} onPress={() => router.replace('/home')}>
+              <MaterialIcons name="arrow-back" size={24} color="#4F6367" />
+            </TouchableOpacity>
             <Text style={styles.headerTitle}>Settings</Text>
           </View>
 

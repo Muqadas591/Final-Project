@@ -22,6 +22,7 @@ import certifi
 from google.oauth2 import service_account
 from googleapiclient.http import MediaIoBaseDownload
 import io
+import base64
 
 
 app = Flask(__name__)
@@ -36,20 +37,12 @@ CORS(app, resources={r"/*": {
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 # Initialize Firebase
-# Initialize Firebase using environment variable
-try:
-    firebase_credentials_json = os.environ.get("FIREBASE_CREDENTIALS")
-    if not firebase_credentials_json:
-        raise ValueError("Missing FIREBASE_CREDENTIALS environment variable.")
-    
-    cred_dict = json.loads(firebase_credentials_json)
-    cred = credentials.Certificate(cred_dict)
-    firebase_admin.initialize_app(cred)
-    db = firestore.client()
-except Exception as firebase_err:
-    logger.error(f"Firebase initialization error: {str(firebase_err)}")
-    raise
+cred = credentials.Certificate('../firebase/mental-health-app-68c4b-firebase-adminsdk-fbsvc-18a9b4b239.json')
+firebase_admin.initialize_app(cred)
+db = firestore.client()
+
 
 
 # Load models
@@ -273,3 +266,4 @@ def after_request(response):
 
 #if __name__ == "__main__":
     #app.run(host="0.0.0.0", port=5000, debug=True)
+     # <-- required for WSGI servers like Gunicorn
